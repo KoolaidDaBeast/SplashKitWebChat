@@ -1,0 +1,135 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <title>Homepage</title>
+
+    <script>
+        if (Cookies.get('token') != null) {
+            window.location.href = "/groups";
+        }
+    </script>
+</head>
+
+<body class="text-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+                style="width: 30; height: 30;" class="d-inline-block align-top"> C++ Chat </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/groups">Groups</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><b
+                            id="usernameTag">...</b>
+                        <span class="badge badge-danger notificationBadge" style="display: none;">0</span>
+                    </a>
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="" id="btnNotification" data-toggle="modal" data-target="#notificationsModal">Notifications
+                            <span class="badge badge-danger notificationBadge">0</span></a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="mx-auto" style="width: 25%; padding-top: 5%;">
+        <br>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+            style="width: 30%; height: 25%; padding-bottom: 5%;">
+        <br>
+        <h2>Sign In/Register</h2>
+        <br>
+        <form method="POST" action="/request/login" enctype="application/json" id="loginForm">
+            <div class="input-group">
+                <input type="text" aria-label="Username" class="form-control" placeholder="Username" name="username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" aria-label="Password" class="form-control" placeholder="Password" name="password" required>
+            </div>
+            <a href="/register"><b>Register Here...</b></a>
+            <br>
+            <button class="btn btn-primary btn-lg btn-block" type="submit" value="Input"> Login </button>
+        </form>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div class="modal" tabindex="-1" role="dialog" id="notificationsModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Unread Chats</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body notificationsModalBody">
+                    <p>Modal body text goes here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function objectifyForm(formArray) {
+            var returnArray = {};
+
+            for (var i = 0; i < formArray.length; i++) {
+                returnArray[formArray[i]['name']] = formArray[i]['value'];
+            }
+
+            return JSON.stringify(returnArray);
+        }
+
+        $("form").submit(function (e) {
+            var form = $(this);
+            var url = form.attr('action');
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: objectifyForm(form.serializeArray()),
+                success: function (data) {
+                    if (data.toLowerCase() == "invalid login") {
+                        swal("Error", "Invalid Username/Password", "warning");
+                    }
+                    else {
+                        Cookies.set('token', data);
+                        window.location.href = "/groups";
+                    }
+                }
+            });
+
+            e.preventDefault(); // avoid to execute the actual submit of the form.
+        });
+    </script>
+</body>
+
+</html>

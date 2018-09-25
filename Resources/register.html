@@ -1,0 +1,163 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <title>Register</title>
+
+    <script>
+        if (Cookies.get('token') != null) {
+            window.location.href = "/groups";
+        }
+    </script>
+</head>
+
+<body class="text-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+                style="width: 30; height: 30;" class="d-inline-block align-top"> C++ Chat </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/groups">Groups</a>
+                </li>
+            </ul>
+            <span class="navbar-text">
+                <b>Guest</b>
+            </span>
+        </div>
+    </nav>
+
+    <div class="mx-auto" style="width: 25%; padding-top: 1%;">
+        <br>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+            style="width: 30%; height: 25%; padding-bottom: 5%;">
+        <br>
+        <h2>Register</h2>
+        <br>
+        <form method="POST" action="/request/register" enctype="application/json" id="registerForm">
+            <div class="input-group">
+                <input type="text" aria-label="Username" class="form-control" placeholder="Username" name="username" required>
+            </div>
+            <div class="input-group">
+                <input type="text" aria-label="Email" class="form-control" placeholder="Email" name="email" required>
+            </div>
+            <div class="input-group">
+                <input type="password" aria-label="Password" class="form-control" placeholder="Password" name="password" required>
+            </div>
+            <div class="input-group">
+                <input type="password" aria-label="Password" class="form-control" placeholder="Confirm Password" name="confirm_password"
+                    required>
+            </div>
+            <a href="/"><b>Login Here...</b></a>
+            <br>
+            <button class="btn btn-primary btn-lg btn-block" type="submit" value="Input"> Register </button>
+        </form>
+    </div>
+
+    <script>
+        function objectifyForm(formArray) {
+            var returnArray = {};
+
+            for (var i = 0; i < formArray.length; i++) {
+                returnArray[formArray[i]['name']] = formArray[i]['value'];
+            }
+
+            return JSON.stringify(returnArray);
+        }
+
+        function checkNotifications() {
+            $.ajax({
+                type: "GET",
+                url: "/request/notification/FETCH_GROUP_ID?token=" + Cookies.get('token'),
+                success: function (data) {
+                    if (data != "null") {
+                        var jsonData = JSON.parse(data);
+                        var htmlCode = "";
+
+                        for (var i = 0; i < Object.keys(jsonData).length; i++) {
+
+                            if (jsonData[i].group_id == "FETCH_GROUP_ID") {
+                                delete jsonData[i];
+                                continue;
+                            }
+
+                            htmlCode += '<br><a href="/chatroom/' + jsonData[i].group_id + '" style="text-decoration: none; color: black;"> <b>' + shrinkText(jsonData[i].group_name, 30) + '</b> &nbsp;<span class="badge-pill badge-danger" style="font-size: x-small;">Unread Message(s)</span></a>';
+                        }
+
+                        $(".notificationBadge").removeAttr("style");
+                        $(".notificationBadge").text(Object.keys(jsonData).length);
+                        $(".notificationsModalBody").html(htmlCode);
+                    }
+                    else {
+                        $(".notificationBadge").css("display", "none");
+                        $(".notificationBadge").text(0);
+                        $(".notificationsModalBody").html("<b> No unread messages. </b>");
+                    }
+
+                    notificationData = data;
+                }
+            });
+        }
+
+        $("form").submit(function (e) {
+            var form = $(this);
+            var url = form.attr('action');
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: objectifyForm(form.serializeArray()),
+                success: function (data) {
+                    if (data == "Invalid Password") {
+                        swal("Invalid Password", "Passwords do not match.", "warning");
+                    }
+                    else if (data == "Success") {
+                        window.location.href = "./";
+                    }
+                    else if (data == "Account Exists") {
+                        swal("Username Exists", "This username already exists.", "warning");
+                    }
+                    else {
+                        swal("ERROR", data, "error");
+                    }
+                }
+            });
+
+            e.preventDefault();
+        });
+
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "/request/username/" + Cookies.get('token'),
+                success: function (data) {
+                    $("#usernameTag").text(data);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

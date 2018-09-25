@@ -1,0 +1,634 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <title>Chatroom</title>
+
+    <style>
+        .card-body {
+            font-size: large;
+            overflow: auto;
+        }
+
+        .table-responsive {
+            border: 0px solid #ddd;
+            overflow: auto;
+        }
+
+        td {
+            white-space: normal !important;
+            word-wrap: break-word;
+            color: rgb(255, 251, 251);
+        }
+
+        table {
+            table-layout: fixed;
+        }
+
+        .avatar {
+            min-height: 30px;
+            max-height: 30px;
+
+            min-width: 30px;
+            max-width: 30px;
+        }
+
+        .chatAvatar {
+            min-height: 25px;
+            max-height: 25px;
+
+            min-width: 25px;
+            max-width: 25px;
+        }
+
+        .timestamp {
+            font-size: small;
+            color: #bababa;
+        }
+
+        .messageTimestamp {
+            font-size: small;
+            color: #838383;
+        }
+
+        #btnSendMessage {
+            border-radius: 0px;
+        }
+
+        .card {
+            border-radius: 0px;
+        }
+
+        body {
+            background: #343a40;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .statusBadge {
+            color: green;
+            font-size: 150%;
+        }
+    </style>
+
+    <script>
+        //Check User Permissions
+        $.ajax({
+            type: "GET",
+            url: "/request-access/group/FETCH_GROUP_ID?token=" + Cookies.get('token'),
+            success: function (data) {
+                if (data == "access denied") {
+                    window.location.href = "/groups";
+                }
+            }
+        });
+    </script>
+</head>
+
+<body class="text-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+                style="width: 30; height: 30;" class="d-inline-block align-top"> C++ Chat </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/groups">Groups</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true"
+                        aria-expanded="false"><b id="usernameTag">...</b>
+                        <span class="badge badge-danger notificationBadge" style="display: none;">0</span>
+                    </a>
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="" id="btnNotification" data-toggle="modal" data-target="#notificationsModal">Notifications
+                            <span class="badge badge-danger notificationBadge">0</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/logout">
+                            Logout
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="padding: 0.1%;">
+        <div class="card text-white bg-dark">
+            <div class="card-header text-left">
+                <span class="chatroomTitle" style="word-wrap: break-word;"><b>FETCH_GROUP_NAME</b></span>
+                <span class="chatroomToolbar">
+                    <button type="button" class="btn btn-success" aria-label="Right Align" id="btnAddUser" data-toggle="tooltip"
+                        data-placement="top" title="Add user to group">
+                        <span class="fa fa-plus" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="btn btn-warning" aria-label="Right Align" id="btnRemoveUser" title="Remove user from group">
+                        <span class="fa fa-remove" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="btn btn-danger" aria-label="Right Align" id="btnDeleteGroup" title="Delete Group">
+                        <span class="fa fa-trash" aria-hidden="true"></span>
+                    </button>
+                </span>
+            </div>
+
+            <div class="card-body" style="height: 50%;">
+                <table class="table" style="overflow-y: scroll;" id="chatMessagesTable">
+                    <tbody id="chatMessages">
+                        <tr>
+                            <td>Loading recent chat messages...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer">
+                <form method="POST" action="/request/add-message/FETCH_GROUP_ID" id="chatForm">
+                    <input type="hidden" name="token" value="" class="token">
+                    <input type="hidden" name="timestamp" value="" class="timestamp">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Type message here..." name="message" id="txtMessage">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="button" id="btnSendMessage" data-loading-text="Sending..."
+                                autocomplete="off">Send
+                                Message
+                            </button>
+                        </span>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div class="modal" tabindex="-1" role="dialog" id="notificationsModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Unread Chats</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body notificationsModalBody">
+                    <p>Modal body text goes here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GROUP_ID = "FETCH_GROUP_ID";
+        var getMessageTimeout, updateTimestampTimeout;
+        var prevMessageBatch;
+        var notificationData;
+
+        function convertMillis(time) {
+            const DAY = ((((1000) * 60) * 60) * 24);
+            const HOUR = (((1000) * 60) * 60);
+            const MINUTE = ((1000) * 60);
+            const SEC = (1000);
+
+            var day = 0, hour = 0, min = 0, sec = 0;
+            var millis = time;
+
+            if (millis > DAY) {
+                day = millis / DAY;
+                millis -= day * DAY;
+            }
+
+            if (millis > HOUR) {
+                hour = millis / HOUR;
+                millis -= hour * HOUR;
+            }
+
+            if (millis > MINUTE) {
+                min = millis / MINUTE;
+                millis -= min * MINUTE;
+            }
+
+            if (millis > SEC) {
+                sec = millis / SEC;
+                millis -= sec * SEC;
+            }
+
+            //Round values
+            day = Math.round(day);
+            hour = Math.round(hour);
+            min = Math.round(min);
+            sec = Math.round(sec);
+
+            if (day > 0) {
+                if (day == 1) {
+                    return day + " day ago"
+                }
+                else {
+                    return day + " days ago"
+                }
+            }
+
+            if (hour > 0) {
+                if (hour == 1) {
+                    return hour + " hour ago"
+                }
+                else {
+                    return hour + " hours ago"
+                }
+            }
+
+            if (min > 0) {
+                if (min == 1) {
+                    return min + " min ago"
+                }
+                else {
+                    return min + " mins ago"
+                }
+            }
+
+            if (sec > 0) {
+                if (sec == 1) {
+                    return sec + " sec ago"
+                }
+                else {
+                    return sec + " secs ago"
+                }
+            }
+
+            return "0 secs ago";
+        }
+
+        function shrinkText(text, limit) {
+            if (text.length > limit) {
+                return text.substring(0, limit - 3) + "...";
+            }
+
+            return text;
+        }
+
+        function objectifyForm(formArray) {
+            var returnArray = {};
+
+            for (var i = 0; i < formArray.length; i++) {
+                returnArray[formArray[i]['name']] = formArray[i]['value'];
+            }
+
+            return JSON.stringify(returnArray);
+        }
+
+        function addMessage(username, message, timestamp, status) {
+            if (status == "online") {
+                $('#chatMessages').append("<tr timestamp='" + timestamp + "'><td>" + "<span class='statusBadge'>&bull;</span>&nbsp;" + "<b>" + username + "</b> " + " <span class='messageTimestamp' timestamp='" + timestamp + "'> " + convertMillis((Date.now() - timestamp)) + " </span> <br>" + message + " </td></tr>");
+            }
+            else {
+                $('#chatMessages').append("<tr timestamp='" + timestamp + "'><td>" + "<b>" + username + "</b> " + " <span class='messageTimestamp' timestamp='" + timestamp + "'> " + convertMillis((Date.now() - timestamp)) + " </span> <br>" + message + " </td></tr>");
+            }
+        }
+
+        function getMessages() {
+            getOnlineUsers();
+
+            $.ajax({
+                type: "GET",
+                url: "/request/messages/FETCH_GROUP_ID",
+                success: function (data) {
+
+                    var jsonData = JSON.parse(data);
+
+                    if (jsonData == null) { return; }
+
+                    if (prevMessageBatch != data) {
+                        $('#chatMessages').html('');
+
+                        for (var i = 0; i < Object.keys(jsonData).length; i++) {
+                            addMessage(jsonData[i].username, jsonData[i].message, jsonData[i].timestamp, jsonData[i].status);
+                        }
+
+                        prevMessageBatch = data;
+
+                        document.getElementById("chatMessages").scrollIntoView(false);
+
+                        updateNotifications($('#chatMessages tr:last').attr('timestamp'));
+                    }
+
+                }
+            });
+
+            checkNotifications();
+            setTimeout(getMessages, 750);
+        }
+
+        function updateTimestamp() {
+            $(".messageTimestamp").each(function () {
+                $(this).text(convertMillis((Date.now() - $(this).attr("timestamp"))));
+            });
+
+            setTimeout(updateTimestamp, 1000);
+        }
+
+        function sendMessage() {
+            $("#btnSendMessage").attr("disabled");
+            $(".timestamp").val(Date.now().toString());
+
+            //var postData = '{"token" : "' + Cookies.get('token') + '", "message" : "' + $("#txtMessage").val() + '", "timestamp" : "' + $(".timestamp").val() + '"}';
+            var postData = objectifyForm($("#chatForm").serializeArray());
+
+            $.ajax({
+                type: "POST",
+                url: "/request/add-message/FETCH_GROUP_ID",
+                data: postData,
+                success: function (data) {
+                    if (data == "blank message") {
+                        swal("Invalid Message", "You cannot send a blank message!", "warning");
+                    }
+                    else if (data == "limit exceded") {
+                        swal("Invalid Message", "You cannot send a message with over 2000 characters!", "warning");
+                    }
+                    else {
+                        $("#btnSendMessage").removeAttr("disabled");
+                        $("#txtMessage").val('');
+                    }
+                }
+            });
+        }
+
+        function updateNotifications(timestamp) {
+            var postData = '{"token" : "' + Cookies.get('token') + '", "group_id" : "FETCH_GROUP_ID", "timestamp" : "' + timestamp + '"}';
+
+            $.ajax({
+                type: "POST",
+                url: "/request/update-notification/FETCH_GROUP_ID",
+                data: postData,
+                success: function (data) {
+                    //alert(data);
+                }
+            });
+        }
+
+        function checkNotifications() {
+            $.ajax({
+                type: "GET",
+                url: "/request/notification/FETCH_GROUP_ID?token=" + Cookies.get('token'),
+                success: function (data) {
+                    if (data != "null") {
+                        var jsonData = JSON.parse(data);
+                        var htmlCode = "";
+
+                        for (var i = 0; i < Object.keys(jsonData).length; i++) {
+
+                            if (jsonData[i].group_id == "FETCH_GROUP_ID") {
+                                delete jsonData[i];
+                                continue;
+                            }
+
+                            htmlCode += '<br><a href="/chatroom/' + jsonData[i].group_id + '" style="text-decoration: none; color: black;"> <b>' + shrinkText(jsonData[i].group_name, 30) + '</b> &nbsp;<span class="badge-pill badge-danger" style="font-size: x-small;">Unread Message(s)</span></a>';
+                        }
+
+                        $(".notificationBadge").css("display", "");
+                        $(".notificationBadge").text(Object.keys(jsonData).length);
+                        $(".notificationsModalBody").html(htmlCode);
+                    }
+                    else {
+                        $(".notificationBadge").css("display", "none");
+                        $(".notificationBadge").text(0);
+                        $(".notificationsModalBody").html("<b> No unread messages. </b>");
+                    }
+
+                    notificationData = data;
+                }
+            });
+        }
+
+        function getOnlineUsers() {
+            $.ajax({
+                type: "GET",
+                url: "/request/users/FETCH_GROUP_ID?token=" + Cookies.get('token'),
+                success: function (data) {
+                    //alert(data);
+                }
+            });
+        }
+
+        function resizeElements() {
+            //Setting card height
+            var dynamicHeight = (window.innerHeight - $("nav").height()) - 0;
+            $(".card").height(dynamicHeight);
+
+            //Setting chatroom toolbar
+            var titleWidth = $(".chatroomTitle").offset().left + $(".chatroomTitle").width();
+
+            var dynamicWidth = ($(".card").width() - titleWidth) - ($(".chatroomToolbar").width() + 50);
+            $(".chatroomToolbar").css("margin-left", dynamicWidth + "px");
+        }
+
+        $(document).ready(function () {
+            //Fetch username using token
+            $.ajax({
+                type: "GET",
+                url: "/request/username/" + Cookies.get('token'),
+                success: function (data) {
+                    $("#usernameTag").text(data);
+                }
+            });
+
+            //Fetch messages using token
+            getMessageTimeout = setTimeout(getMessages, 1250);
+            updateTimestampTimeout = setTimeout(updateTimestamp, 1000);
+
+            //Set input token values
+            $(".token").val(Cookies.get('token'));
+
+            resizeElements();
+
+            getOnlineUsers();
+        });
+
+        $("#btnSendMessage").click(function (e) {
+            sendMessage();
+
+            e.preventDefault();
+        });
+
+        $("#btnAddUser").click(function (e) {
+            swal({
+                text: 'Please provide a user to add!',
+                content: "input",
+                button: {
+                    text: "Add User",
+                    closeModal: false,
+                },
+            }).then(name => {
+                if (name == null) { return; }
+
+                var postAddUserData = '{"token" : "' + Cookies.get('token') + '", "username" : "' + name + '", "group_id" : "' + "FETCH_GROUP_ID" + '"}';
+
+                $.ajax({
+                    type: "POST",
+                    url: "/request/add-user",
+                    data: postAddUserData,
+                    success: function (data) {
+                        if (data == "success") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Success", "The user " + name + " has been added to this group.", "success");
+                        }
+                        else if (data == "already exists") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Failure", "The user " + name + " has already been added to this group.", "error");
+                        }
+                        else if (data == "invalid username") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Failure", "The user " + name + " does not exist!", "error");
+                        }
+                    }
+                });
+            });
+
+            e.preventDefault();
+        });
+
+        $("#btnRemoveUser").click(function (e) {
+            swal({
+                text: 'Please provide a user to remove!',
+                content: "input",
+                button: {
+                    text: "Remove User",
+                    closeModal: false,
+                },
+            }).then(name => {
+                if (name == null) { return; }
+
+                var data = '{"token" : "' + Cookies.get('token') + '", "username" : "' + name + '", "group_id" : "' + "FETCH_GROUP_ID" + '"}';
+
+                $.ajax({
+                    type: "POST",
+                    url: "/request/remove-user",
+                    data: data,
+                    success: function (data) {
+                        if (data == "success") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Success", "The user " + name + " has been removed from this group.", "success");
+                        }
+                        else if (data == "no access") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Failure", "The user " + name + " is not a part of this group.", "error");
+                        }
+                        else if (data == "no permission") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Failure", "You do not have permission to remove user " + name + ".", "error");
+                        }
+                        else if (data == "invalid username") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Failure", "The user " + name + " does not exist!", "error");
+                        }
+                    }
+                });
+            });
+
+            e.preventDefault();
+        });
+
+        $("#btnDeleteGroup").click(function () {
+            swal({
+                title: "Are you sure?",
+                text: "Once deleted the group can never be recovered.",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            })
+                .then((willDelete) => {
+                    if (willDelete) {
+                        var postdata = '{"token" : "' + Cookies.get('token') + '", "group_id" : "' + "FETCH_GROUP_ID" + '"}';
+
+                        $.ajax({
+                            type: "POST",
+                            url: "/request/delete-group",
+                            data: postdata,
+                            success: function (data) {
+                                if (data == "success") {
+                                    swal.stopLoading();
+                                    swal.close();
+
+                                    swal("Success", "This group has been deleted.", "success");
+                                }
+                                else if (data == "no permission") {
+                                    swal.stopLoading();
+                                    swal.close();
+
+                                    swal("Failure", "You do not have permission to delete this group.");
+                                }
+                            }
+                        });
+                    }
+                });
+        });
+
+        $('#txtMessage').keypress(function (e) {
+            if (e.keyCode == 13) {
+                $('#btnSendMessage').click();
+                return false;
+            }
+            else {
+                return true;
+            }
+        });
+
+        $(window).resize(function (e) {
+            resizeElements();
+        });
+
+        window.onbeforeunload = function () {
+            $.ajax({
+                type: "GET",
+                url: "/request/logout?token=" + Cookies.get('token'),
+                async: true
+            });
+
+            return "Are you sure?";
+        };
+
+    </script>
+</body>
+
+</html>

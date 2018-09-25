@@ -1,0 +1,213 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+        crossorigin="anonymous">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <title>Chat Groups</title>
+
+    <script>
+        if (Cookies.get('token') == null) {
+            window.location.href = "/";
+        }
+    </script>
+</head>
+
+<body class="text-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="/">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/ISO_C%2B%2B_Logo.svg/1200px-ISO_C%2B%2B_Logo.svg.png"
+                style="width: 30; height: 30;" class="d-inline-block align-top"> C++ Chat </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link hrefReplace" href="/groups">Groups</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><b
+                            id="usernameTag">...</b>
+                        <span class="badge badge-danger notificationBadge" style="display: none;">0</span>
+                    </a>
+
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="" id="btnNotification" data-toggle="modal" data-target="#notificationsModal">Notifications
+                            <span class="badge badge-danger notificationBadge">0</span></a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="mx-auto" style="width: 75%; padding-top: 5%;">
+        <h1>Chating Groups</h1>
+
+        <button type="button" class="btn btn-danger btn-sm" id="btnCreateGroup">Create Group</button>
+
+        <ul class="list-group" style="padding-top: 1%;" id="groupChatList">
+
+        </ul>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div class="modal" tabindex="-1" role="dialog" id="notificationsModal">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Unread Chats</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body notificationsModalBody">
+                    <p>Modal body text goes here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function objectifyForm(formArray) {
+            var returnArray = {};
+
+            for (var i = 0; i < formArray.length; i++) {
+                returnArray[formArray[i]['name']] = formArray[i]['value'];
+            }
+
+            return JSON.stringify(returnArray);
+        }
+
+        var checkNotificationTimeout;
+
+        function shrinkText(text, limit) {
+            if (text.length > limit) {
+                return text.substring(0, limit - 3) + "...";
+            }
+
+            return text;
+        }
+
+        function checkNotifications() {
+            $.ajax({
+                type: "GET",
+                url: "/request/notification/FETCH_GROUP_ID?token=" + Cookies.get('token'),
+                success: function (data) {
+                    if (data != "null") {
+                        var jsonData = JSON.parse(data);
+                        var htmlCode = "";
+
+                        for (var i = 0; i < Object.keys(jsonData).length; i++) {
+                            htmlCode += '<br><a href="/chatroom/' + jsonData[i].group_id + '" style="text-decoration: none; color: black;"> <b>' + shrinkText(jsonData[i].group_name, 30) + '</b> &nbsp;<span class="badge-pill badge-danger" style="font-size: x-small;">Unread Message(s)</span></a>';
+                        }
+
+                        $(".notificationBadge").css("display", "");
+                        $(".notificationBadge").text(Object.keys(jsonData).length);
+                        $(".notificationsModalBody").html(htmlCode);
+                    }
+                    else {
+                        $(".notificationBadge").css("display", "none");
+                        $(".notificationBadge").text(0);
+                        $(".notificationsModalBody").html("<b> No unread messages. </b>");
+                    }
+
+                    notificationData = data;
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "/request/username/" + Cookies.get('token'),
+                success: function (data) {
+                    $("#usernameTag").text(data);
+                }
+            });
+
+            $.ajax({
+                type: "GET",
+                url: "/request/groups/" + Cookies.get('token'),
+                success: function (data) {
+                    var jsonData = JSON.parse(data);
+
+                    var htmlCode = '<a href="{URL}" class="list-group-item list-group-item-action">{TEXT}</a>';
+
+                    for (var i = 0; i < Object.keys(jsonData).length; i++) {
+                        var prevHtmlCode = $("#groupChatList").html();
+                        $("#groupChatList").html(prevHtmlCode + htmlCode.replace("{URL}", "/chatroom/" + jsonData[i].group_id).replace("{TEXT}", jsonData[i].group_name));
+                    }
+                }
+            });
+
+            checkNotificationTimeout = setTimeout(checkNotifications, 1000);
+        });
+
+        $("#btnCreateGroup").click(function () {
+            swal({
+                text: 'Please provide a group name!',
+                content: "input",
+                button: {
+                    text: "Create",
+                    closeModal: false,
+                },
+            }).then(name => {
+                if (name == null) {
+                    swal.stopLoading();
+                    swal.close();
+                    return;
+                }
+
+                var data = '{"token" : "' + Cookies.get('token') + '", "group_name" : "' + name + '"}';
+
+                $.ajax({
+                    type: "POST",
+                    url: "/request/create-group",
+                    data: data,
+                    success: function (data) {
+                        if (data == "blank name") {
+                            swal.stopLoading();
+                            swal.close();
+
+                            swal("Error", "You cannot create a group with a blank name!", "error");
+                            return;
+                        }
+
+                        swal.stopLoading();
+                        swal.close();
+
+                        document.location.reload();
+                    }
+                });
+
+
+            });
+        });
+    </script>
+</body>
+
+</html>
